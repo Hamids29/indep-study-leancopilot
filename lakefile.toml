@@ -1,0 +1,17 @@
+name = "lean-copilot-test"
+version = "0.1.0"
+defaultTargets = ["lean-copilot-test"]
+moreLinkArgs = ["-L./.lake/packages/LeanCopilot/.lake/build/lib", "-lctranslate2"]
+
+[[lean_lib]]
+name = "LeanCopilotTest"
+
+[[lean_exe]]
+name = "lean-copilot-test"
+root = "Main"
+
+[[require]]
+name = "LeanCopilot"
+git = "https://github.com/lean-dojo/LeanCopilot.git"
+rev = "v4.25.0"
+
