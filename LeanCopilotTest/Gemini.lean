@@ -1,5 +1,6 @@
 import Lean
 import LeanCopilot
+import Lean.Meta.Tactic.TryThis
 
 open Lean Meta Elab Term Tactic
 
@@ -40,38 +41,41 @@ private def callGeminiServer (proofState : String) : IO String := do
   return out.stdout
 
 /--
-Parse the server response into an array of tactic strings.
-Expected format: {"outputs": [{"output": "tactic", "score": 1.0}, ...]}
+Parse the server response into an array of (proof, reasoning) pairs.
+Expected format: {"outputs": [{"output": "proof", "score": 1.0, "reasoning": "..."}, ...]}
 -/
-private def parseResponse (resp : String) : IO (Array String) := do
+private def parseResponse (resp : String) : IO (Array (String × String)) := do
   let some json := Lean.Json.parse resp |>.toOption
     | throw $ IO.userError s!"Failed to parse JSON response: {resp}"
   let some outputs := json.getObjVal? "outputs" |>.toOption
     | throw $ IO.userError s!"No 'outputs' field in response: {resp}"
   let some arr := outputs.getArr? |>.toOption
     | throw $ IO.userError s!"'outputs' is not an array: {resp}"
-  let mut tactics : Array String := #[]
+  let mut results : Array (String × String) := #[]
   for item in arr do
     if let some output := item.getObjVal? "output" |>.toOption then
-      if let some tactic := output.getStr? |>.toOption then
-        tactics := tactics.push tactic
-  return tactics
+      if let some proof := output.getStr? |>.toOption then
+        let reasoning := item.getObjVal? "reasoning" |>.toOption
+          |>.bind (·.getStr? |>.toOption) |>.getD ""
+        results := results.push (proof, reasoning)
+  return results
 
 -- Syntax declaration
 syntax "call_gemini" : tactic
 
 -- Elaboration rule
+open Lean.Meta.Tactic.TryThis in
 elab_rules : tactic
   | `(tactic | call_gemini) => do
     let state ← getPpState
     let resp ← callGeminiServer state
-    let tactics ← parseResponse resp
-    if tactics.isEmpty then
+    let results ← parseResponse resp
+    if results.isEmpty then
       logWarning "Gemini returned no suggestions."
     else
-      let mut msg := "Gemini suggests:\n"
-      for tactic in tactics do
-        msg := msg ++ s!"  Try this: {tactic}\n"
-      logInfo msg
+      let suggestions : Array Suggestion := results.map fun (proof, reasoning) =>
+        { suggestion := SuggestionText.string proof,
+          postInfo? := if reasoning.isEmpty then none else some s!"\n-- {reasoning}" }
+      addSuggestions (← getRef) suggestions
 
 end LeanCopilotTest
