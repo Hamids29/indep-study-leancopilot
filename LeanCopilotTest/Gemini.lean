@@ -2,6 +2,7 @@ import Lean
 import LeanCopilot
 import Lean.Meta.Tactic.TryThis
 
+
 open Lean Meta Elab Term Tactic
 
 namespace LeanCopilotTest
