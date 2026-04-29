@@ -6,6 +6,9 @@ moreLinkArgs = ["-L./.lake/packages/LeanCopilot/.lake/build/lib", "-lctranslate2
 [[lean_lib]]
 name = "LeanCopilotTest"
 
+[[lean_lib]]
+name = "test2"
+
 [[lean_exe]]
 name = "lean-copilot-test"
 root = "Main"
@@ -13,5 +16,10 @@ root = "Main"
 [[require]]
 name = "LeanCopilot"
 git = "https://github.com/lean-dojo/LeanCopilot.git"
-rev = "v4.25.0"
+rev = "v4.28.0"
+
+[[require]]
+name = "cslib"
+scope = "leanprover"
+rev = "11b70e5"
 
