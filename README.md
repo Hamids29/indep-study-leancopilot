@@ -236,6 +236,15 @@ Results are ranked: non-`sorry` answers first, then by confidence score.
 
 ## Debugging
 
+If ByT5 consistently shows as not used across many goals, it may be adding noise rather than signal for that problem type. If you see `ByT5 ✓ USED : ['a']`, you have a multiline type parsing bug — the server is treating continuation lines of long lemma types as separate premise names. This is fixed in the current version via a regex filter that rejects anything that isn't a valid Lean identifier before the `:`.
+
+### Tactic filter is blacklist-based
+The tactic line filter (`is_lean_tactic_line`) drops lines that match prose patterns — starts with a prose word like "the", "we", "since", ends with a period, etc. It does **not** maintain a whitelist of known tactic keywords. This means custom Mathlib tactics and any future tactics pass through automatically without needing to update the filter.
+
+### Parallel sketch output
+All four sketches run concurrently via `ThreadPoolExecutor`. Each sketch buffers its terminal output internally and only prints once fully complete, so the log stays readable. Output appears in sketch order (A → B → C → D) regardless of which finishes first.
+
+
 ### Impact analysis output
 The terminal prints a per-sketch report showing which retrieved premises Gemini actually used:
 
