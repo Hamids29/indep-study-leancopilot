@@ -163,6 +163,16 @@ Calls Gemini repeatedly, applying each returned tactic to the proof state, until
 
 Best for: straightforward theorems that require several standard tactics in sequence.
 
+## Known Limitations & Gotchas
+
+### Rate limits and the `sorry` fallback
+When `call_gemini` returns `sorry`, it almost always means Google returned a 429 (quota exceeded), not that the tactic failed silently. The server always fires the request — `sorry` is the fallback on any exception, never Gemini's actual answer. Check your [API quota](https://aistudio.google.com/) if you see it consistently.
+
+### `~` notation for `List.Perm`
+In Lean 4.28, `~` is a scoped notation and not globally active. Add this at the top of any file where your goals involve `List.Perm`:
+
+```lean
+
 ```lean
 theorem mul_comm_example (a b : ℕ) : a * b = b * a := by call_gemini_auto
 ```
@@ -223,6 +233,11 @@ theorem insertionSort_eq_iff_perm (l1 l2 : List ℕ) :
 Results are ranked: non-`sorry` answers first, then by confidence score.
 
 ---
+
+## Debugging
+
+### Impact analysis output
+The terminal prints a per-sketch report showing which retrieved premises Gemini actually used:
 
 ## Lean Tactics You Can Use in Proofs
 
